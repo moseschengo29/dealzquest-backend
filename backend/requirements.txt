@@ -5,3 +5,8 @@ djangorestframework-simplejwt==5.3.1
 beautifulsoup4==4.12.2
 requests==2.31.0
 python-dotenv==1.0.0
+celery==5.5.2
+psycopg2-binary==2.9.5
+selenium==4.8.0
+webdriver-manager==3.8.5
+redis==5.0.3

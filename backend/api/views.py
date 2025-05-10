@@ -8,9 +8,11 @@ from django.shortcuts import get_object_or_404
 from django.db.models import Q
 import random
 from django.core.cache import cache
+from celery import shared_task
 
 
-from .models import Product, SearchHistory, Favorite
+
+from .models import Product, SearchHistory, Favorite, UserRecommendation
 from .serializers import (
     ProductSerializer, 
     SearchHistorySerializer, 
@@ -66,12 +68,12 @@ def search_products(request):
     
     products = scrape_products(query)
 
-    # Cache products by ID for 10 minutes
     for product in products:
         cache.set(f"product_{product['id']}", product, timeout=600)  # 600 seconds = 10 minutes
 
     if request.user.is_authenticated:
         SearchHistory.objects.create(user=request.user, query=query)
+        generate_user_recommendations.delay(request.user.id)
 
     return Response(products)
 
@@ -107,11 +109,59 @@ def get_similar_products(request, id):
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def get_recommended_products(request):
-    # In a real implementation, this would use user's search history
-    # For demo purposes, we'll return random products
-    products = scrape_products('')
-    recommended = random.sample(products, min(4, len(products)))
-    return Response(recommended)
+    recommendations = (
+        UserRecommendation.objects
+        .filter(user=request.user)
+        .order_by('-created_at')
+        .values_list('product_data', flat=True)[:10]
+    )
+    return Response(recommendations)
+
+@shared_task
+def generate_user_recommendations(user_id):
+    from django.contrib.auth.models import User
+    user = User.objects.get(id=user_id)
+
+    # Fetch latest search queries and favorites
+    search_queries = (
+        SearchHistory.objects
+        .filter(user=user)
+        .order_by('-timestamp')[:5]
+        .values_list('query', flat=True)
+    )
+    favorite_titles = (
+        Favorite.objects
+        .filter(user=user)
+        .values_list('product__name', flat=True)[:10]
+    )
+
+    seed_queries = list(set(search_queries) | set(favorite_titles))
+
+    recommended_products = []
+    for query in seed_queries:
+        products = scrape_products(query)
+        recommended_products.extend(products[:2])
+
+    # Deduplicate and limit
+    seen = set()
+    unique_recommendations = []
+    for product in recommended_products:
+        identifier = product.get("id") or product.get("name")
+        if identifier not in seen:
+            seen.add(identifier)
+            unique_recommendations.append(product)
+
+    limited_recommendations = unique_recommendations[:10]
+
+    # Clear previous recommendations
+    UserRecommendation.objects.filter(user=user).delete()
+
+    # Store new ones
+    for product in limited_recommendations:
+        UserRecommendation.objects.create(user=user, product_data=product)
+
+    return True
+
 
 # User data views
 class SearchHistoryListCreateView(generics.ListCreateAPIView):

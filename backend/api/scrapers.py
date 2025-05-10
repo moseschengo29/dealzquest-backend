@@ -13,50 +13,12 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-# def scrape_products(query):
-#     """
-#     Simulate scraping products from multiple Kenyan e-commerce sites
-#     In a real implementation, this would use BeautifulSoup to scrape actual sites
-#     """
-#     # For demo purposes, generate random products
-#     num_products = random.randint(8, 20)
-#     products = [generate_dummy_product() for _ in range(num_products)]
-    
-#     # If there's a query, filter products to make it seem like a real search
-#     if query:
-#         filtered_products = []
-#         for product in products:
-#             # Make 30% of products match the query exactly
-#             if random.random() < 0.3:
-#                 product['name'] = f"{query} {product['name'].split(' ')[-1]}"
-#                 filtered_products.append(product)
-#             # Make another 40% of products contain the query somewhere
-#             elif random.random() < 0.7:
-#                 if random.random() < 0.5:
-#                     product['name'] = f"{product['name']} {query}"
-#                 else:
-#                     parts = product['name'].split(' ')
-#                     if len(parts) > 1:
-#                         product['name'] = f"{parts[0]} {query} {' '.join(parts[1:])}"
-#                     else:
-#                         product['name'] = f"{parts[0]} {query}"
-#                 filtered_products.append(product)
-        
-#         # If we have too few results, add some of the original products
-#         if len(filtered_products) < 5:
-#             filtered_products.extend(products[:5-len(filtered_products)])
-        
-#         return filtered_products
-    
-#     return products
-
-
 def scrape_products(query):
     results = []
 
     try:
         # for scraper in [scrape_jiji, scrape_jumia, scrape_kilimall]:
-        for scraper in [scrape_kilimall, scrape_jiji, scrape_jumia]:
+        for scraper in [scrape_jiji, scrape_jumia, scrape_kilimall]:
             try:
                 scraped = scraper(query)
                 if isinstance(scraped, list):
@@ -108,7 +70,7 @@ def scrape_jumia(query):
                     "url": url,
                     "rating": round(random.uniform(3.0, 5.0), 1)
                 })
-                print(products)
+                # print(products)
             except Exception as e:
                 print(f"Error parsing a Jumia product: {e}")
                 continue

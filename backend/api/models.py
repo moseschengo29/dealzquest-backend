@@ -1,6 +1,8 @@
 from django.db import models
 from django.contrib.auth.models import User
-from django.contrib.postgres.fields import JSONField  # Django 3.1+
+from django.contrib.postgres.fields import JSONField 
+from django.utils import timezone
+
 
 
 class Product(models.Model):
@@ -65,3 +67,11 @@ class ProductPrice(models.Model):
         
     def __str__(self):
         return f"{self.product.name} - {self.price} ({self.source})"
+    
+class UserRecommendation(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    product_data = models.JSONField()  # Store product info (id, name, price, etc.)
+    created_at = models.DateTimeField(default=timezone.now)
+
+    class Meta:
+        unique_together = ('user', 'product_data')  # Prevent duplicate entries    

@@ -13,7 +13,7 @@ urlpatterns = [
     path('products/search/', views.search_products, name='search_products'),
     path('products/<str:id>/', views.get_product, name='get_product'),
     path('products/similar/<str:id>/', views.get_similar_products, name='similar_products'),
-    path('products/recommended/', views.get_recommended_products, name='recommended_products'),
+    path('recommended_products/', views.get_recommended_products, name='recommended_products'),
     
     # User data endpoints
     path('user/search-history/', views.SearchHistoryListCreateView.as_view(), name='search_history'),
